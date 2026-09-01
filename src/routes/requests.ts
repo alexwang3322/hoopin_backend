@@ -33,6 +33,7 @@ requestsRoute.post("/", async (c) => {
   assertRunVisible(run, viewerId);
 
   if (run.hostId === viewerId) throw Errors.cannotRequestOwnRun();
+  if (run.cancelledAt !== null) throw Errors.runCancelled();
 
   const json = await c.req.json().catch(() => ({}));
   const parsed = createJoinRequestSchema.safeParse(json);
@@ -147,6 +148,7 @@ requestsRoute.post("/:reqId/approve", async (c) => {
   const db = getDb(c.env);
   const run = await loadRun(db, c.req.param("runId")!);
   if (run.hostId !== viewerId) throw Errors.notHost();
+  if (run.cancelledAt !== null) throw Errors.runCancelled();
 
   const request = await loadRequest(db, run.id, c.req.param("reqId")!);
   if (request.status !== "pending") throw Errors.requestNotPending();
@@ -172,6 +174,7 @@ requestsRoute.post("/:reqId/decline", async (c) => {
   const db = getDb(c.env);
   const run = await loadRun(db, c.req.param("runId")!);
   if (run.hostId !== viewerId) throw Errors.notHost();
+  if (run.cancelledAt !== null) throw Errors.runCancelled();
 
   const request = await loadRequest(db, run.id, c.req.param("reqId")!);
   if (request.status !== "pending") throw Errors.requestNotPending();

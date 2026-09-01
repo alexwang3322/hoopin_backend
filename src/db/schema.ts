@@ -40,6 +40,10 @@ export const runs = sqliteTable(
     visibility: text("visibility", { enum: ["public", "private"] }).notNull(),
     autoApprove: integer("auto_approve", { mode: "boolean" }).notNull().default(false),
     isDraft: integer("is_draft", { mode: "boolean" }).notNull().default(true),
+    // Soft-cancel — the run and its history stay around; `is_cancelled` is
+    // derived from this being non-null (see lib/viewer.ts). Distinct from
+    // DELETE (hard removal) — see API_CONTRACT.md §3.1's cancel-vs-delete note.
+    cancelledAt: text("cancelled_at"),
     createdAt: text("created_at").notNull(),
   },
   (table) => ({

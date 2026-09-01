@@ -54,6 +54,7 @@ export function buildSeedRuns(): RunRow[] {
       visibility: "public",
       autoApprove: false,
       isDraft: false,
+      cancelledAt: null,
       createdAt: ago(25 * DAY),
     },
     {
@@ -72,6 +73,7 @@ export function buildSeedRuns(): RunRow[] {
       visibility: "public",
       autoApprove: false,
       isDraft: false,
+      cancelledAt: null,
       createdAt: ago(20 * DAY),
     },
     {
@@ -90,6 +92,7 @@ export function buildSeedRuns(): RunRow[] {
       visibility: "public",
       autoApprove: false,
       isDraft: false,
+      cancelledAt: null,
       createdAt: ago(15 * DAY),
     },
     {
@@ -108,6 +111,7 @@ export function buildSeedRuns(): RunRow[] {
       visibility: "public",
       autoApprove: false,
       isDraft: false,
+      cancelledAt: null,
       createdAt: ago(30 * DAY),
     },
     {
@@ -126,6 +130,7 @@ export function buildSeedRuns(): RunRow[] {
       visibility: "public",
       autoApprove: false,
       isDraft: false,
+      cancelledAt: null,
       createdAt: ago(12 * DAY),
     },
     {
@@ -144,6 +149,7 @@ export function buildSeedRuns(): RunRow[] {
       visibility: "public",
       autoApprove: true, // exercises the auto-approve-on-request path
       isDraft: false,
+      cancelledAt: null,
       createdAt: ago(3 * DAY),
     },
     {
@@ -162,6 +168,7 @@ export function buildSeedRuns(): RunRow[] {
       visibility: "private",
       autoApprove: false,
       isDraft: false,
+      cancelledAt: null,
       createdAt: ago(10 * DAY),
     },
     {
@@ -180,6 +187,7 @@ export function buildSeedRuns(): RunRow[] {
       visibility: "public",
       autoApprove: false,
       isDraft: true,
+      cancelledAt: null,
       createdAt: ago(2 * DAY),
     },
   ];

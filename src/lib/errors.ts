@@ -42,6 +42,8 @@ export const Errors = {
   userNotFound: () => new ApiError(404, "USER_NOT_FOUND", "User not found."),
   alreadyRequested: () => new ApiError(409, "ALREADY_REQUESTED", "You already have an active request on this run."),
   runFull: () => new ApiError(409, "RUN_FULL", "This run is at capacity."),
+  runCancelled: () => new ApiError(409, "RUN_CANCELLED", "This run has been cancelled."),
+  runAlreadyCancelled: () => new ApiError(409, "RUN_ALREADY_CANCELLED", "This run is already cancelled."),
   requestNotPending: () => new ApiError(409, "REQUEST_NOT_PENDING", "This request has already been decided."),
   requestAlreadyResolved: () =>
     new ApiError(409, "REQUEST_ALREADY_RESOLVED", "This request has already been withdrawn or declined."),

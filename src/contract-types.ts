@@ -45,6 +45,8 @@ export interface RunSummary {
   going_count: number;
   is_full: boolean;
   is_draft: boolean;
+  is_cancelled: boolean;
+  cancelled_at: ZonedDateTimeString | null;
   visibility: RunVisibility;
   viewer_status: ViewerRunStatus;
   cover_seed: string;

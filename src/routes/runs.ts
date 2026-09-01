@@ -120,6 +120,7 @@ runsRoute.post("/", async (c) => {
     visibility: body.visibility,
     autoApprove: body.auto_approve,
     isDraft: !body.publish,
+    cancelledAt: null,
     createdAt: now,
   };
   await db.insert(runs).values(row);
@@ -289,4 +290,43 @@ runsRoute.delete("/:runId", async (c) => {
   if (run.hostId !== viewerId) throw Errors.notHost();
   await db.delete(runs).where(eq(runs.id, run.id)); // join_requests cascade via FK
   return c.body(null, 204);
+});
+
+// ---------------------------------------------------------------------------
+// POST /runs/:runId/cancel — host only. Soft — see API_CONTRACT.md §3.1's
+// cancel-vs-delete note: the run and its join-request history stick around,
+// `is_cancelled`/`cancelled_at` just become true/set.
+// ---------------------------------------------------------------------------
+runsRoute.post("/:runId/cancel", async (c) => {
+  const viewerId = requireAuth(c);
+  const db = getDb(c.env);
+  const run = await loadRun(db, c.req.param("runId"));
+  if (run.hostId !== viewerId) throw Errors.notHost();
+  if (run.cancelledAt !== null) throw Errors.runAlreadyCancelled();
+
+  await db.update(runs).set({ cancelledAt: new Date().toISOString() }).where(eq(runs.id, run.id));
+
+  const updated = await loadRun(db, run.id);
+  const host = await loadUser(db, updated.hostId);
+  const going = (await approvedCounts(db, [updated.id])).get(updated.id) ?? 0;
+  const action = viewerActionFor(updated, going, viewerId, undefined);
+  const attendeeRows = await db
+    .select()
+    .from(joinRequests)
+    .where(and(eq(joinRequests.runId, updated.id), eq(joinRequests.status, "approved")));
+  const attendeeUsers = attendeeRows.length
+    ? await db.select().from(users).where(
+        inArray(
+          users.id,
+          attendeeRows.map((r) => r.requesterId),
+        ),
+      )
+    : [];
+
+  const detail = toRunDetail(updated, host, going, "host", {
+    attendees: attendeeUsers,
+    viewerAction: action,
+    viewerId,
+  });
+  return c.json(detail);
 });

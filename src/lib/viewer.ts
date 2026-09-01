@@ -134,6 +134,8 @@ export function toRunSummary(
     going_count: goingCount,
     is_full: row.capacity !== null && goingCount >= row.capacity,
     is_draft: row.isDraft,
+    is_cancelled: row.cancelledAt !== null,
+    cancelled_at: row.cancelledAt,
     visibility: row.visibility,
     viewer_status: viewerStatus,
     cover_seed: row.id,
