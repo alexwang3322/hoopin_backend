@@ -1,4 +1,5 @@
-import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, index, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
 
 /**
  * name/bio only — `initials` (API_CONTRACT.md §2 UserSummary) is
@@ -56,9 +57,9 @@ export const runs = sqliteTable(
 /**
  * An approved JoinRequest IS roster membership (API_CONTRACT.md §1/§6 — "no
  * separate Attendee resource"). At most one *active* (pending/approved) row
- * per (run_id, requester_id) is enforced in application logic (lib
- * routes/requests.ts), not a DB constraint, since old withdrawn/declined
- * rows must be allowed to coexist with a fresh request.
+ * per (run_id, requester_id) — old withdrawn/declined rows must still be
+ * allowed to coexist with a fresh request, which rules out a plain unique
+ * index on (run_id, requester_id).
  */
 export const joinRequests = sqliteTable(
   "join_requests",
@@ -79,5 +80,21 @@ export const joinRequests = sqliteTable(
   (table) => ({
     runStatusIdx: index("requests_run_status_idx").on(table.runId, table.status),
     requesterIdx: index("requests_requester_idx").on(table.requesterId),
+    /**
+     * The actual enforcement of "at most one active request per (run,
+     * requester)" — a partial unique index, so it only applies to
+     * pending/approved rows and leaves withdrawn/declined history alone.
+     * routes/requests.ts's POST "/" still does a SELECT-then-check first
+     * for a fast, friendly 409 in the common case, but that check-then-insert
+     * isn't atomic on its own — two truly concurrent requests (e.g. a
+     * double-click that fires before the UI's disabled state takes effect)
+     * can both pass the SELECT before either INSERT commits. This index is
+     * what actually closes that race: the second INSERT fails at the
+     * database level regardless of timing, and the route catches that
+     * failure and reports the same ALREADY_REQUESTED error.
+     */
+    oneActiveRequestPerViewerIdx: uniqueIndex("requests_one_active_per_viewer_idx")
+      .on(table.runId, table.requesterId)
+      .where(sql`${table.status} IN ('pending', 'approved')`),
   }),
 );

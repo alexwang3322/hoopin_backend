@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `requests_one_active_per_viewer_idx` ON `join_requests` (`run_id`,`requester_id`) WHERE "join_requests"."status" IN ('pending', 'approved');

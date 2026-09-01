@@ -69,7 +69,17 @@ requestsRoute.post("/", async (c) => {
     createdAt: now,
     decidedAt: willAutoApprove ? now : null,
   };
-  await db.insert(joinRequests).values(row);
+  try {
+    await db.insert(joinRequests).values(row);
+  } catch (err) {
+    // The partial unique index (db/schema.ts) is the actual race guard —
+    // the SELECT above is only a fast/friendly pre-check. A concurrent
+    // request that slipped past that check lands here instead.
+    if (err instanceof Error && /UNIQUE constraint failed/i.test(err.message)) {
+      throw Errors.alreadyRequested();
+    }
+    throw err;
+  }
 
   const requester = await loadUser(db, viewerId);
   const body: JoinRequest = toJoinRequest(row, requester);

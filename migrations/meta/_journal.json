@@ -15,6 +15,13 @@
       "when": 1788244721279,
       "tag": "0001_wide_warpath",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1788248299002,
+      "tag": "0002_parched_tyrannus",
+      "breakpoints": true
     }
   ]
 }
