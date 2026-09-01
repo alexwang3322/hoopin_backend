@@ -1,4 +1,4 @@
-# Pull Up — Backend
+# Hoopin — Backend
 
 Implements `../API_CONTRACT.md` on Cloudflare Workers ("Plan A" from the architecture discussion): [Hono](https://hono.dev) + [Drizzle ORM](https://orm.drizzle.team) + [D1](https://developers.cloudflare.com/d1/).
 
@@ -42,7 +42,7 @@ This is a **local-dev-only stub** (`src/lib/auth.ts`) — it must never run with
 Not done by this scaffold — see the repo root `CLAUDE.md` and the architecture discussion for the full picture. Short version:
 
 1. `wrangler login` (or reuse the `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` already used by `frontend/`'s deploy).
-2. `wrangler d1 create pull-up-db` — replace the placeholder `database_id` in `wrangler.jsonc` with the real one it prints.
+2. `wrangler d1 create hoopin-db` — replace the placeholder `database_id` in `wrangler.jsonc` with the real one it prints.
 3. `npm run db:migrate:remote`.
 4. Wire a real auth issuer (Clerk recommended — see `.dev.vars.example`) and flip `DEV_AUTH` to `false` in `wrangler.jsonc`.
 5. `npm run deploy`.

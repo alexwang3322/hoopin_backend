@@ -14,7 +14,7 @@ const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 app.use("*", cors({ origin: "*", allowHeaders: ["Authorization", "Content-Type"] }));
 app.use("*", resolveViewer);
 
-app.get("/", (c) => c.json({ name: "pull-up-backend", ok: true }));
+app.get("/", (c) => c.json({ name: "hoopin-backend", ok: true }));
 
 const v1 = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 v1.route("/runs", runsRoute);

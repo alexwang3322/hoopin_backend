@@ -1,5 +1,5 @@
 {
-  "name": "pull-up-backend",
+  "name": "hoopin-backend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -8,8 +8,8 @@
     "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
-    "db:migrate:local": "wrangler d1 migrations apply pull-up-db --local",
-    "db:migrate:remote": "wrangler d1 migrations apply pull-up-db --remote",
+    "db:migrate:local": "wrangler d1 migrations apply hoopin-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply hoopin-db --remote",
     "db:seed:local": "node scripts/seed-local.mjs",
     "cf-typegen": "wrangler types"
   },
