@@ -18,6 +18,7 @@ npm run dev                         # starts the Worker on http://localhost:8787
 
 # in a second terminal, once `npm run dev` is running:
 npm run db:seed:local               # wipes + reseeds local D1 with fixture data
+npm run db:clear:local              # empties local D1 (no reseed)
 ```
 
 The seed data (`src/db/seedData.ts`) reuses the same user/run ids as `frontend/src/mock/{profiles,runs}.ts` (Jamie Tran hosting Kezar Pavilion, etc.) so manual testing lines up with what the frontend/mobile mocks already demonstrate — plus a private run and a draft to exercise those code paths.
@@ -33,9 +34,14 @@ curl http://localhost:8787/v1/runs/ev_kezar_lunch \
 
 This is a **local-dev-only stub** (`src/lib/auth.ts`) — it must never run with real traffic. `DEV_AUTH=false` makes every bearer token fail closed with a loud error until real JWT verification is implemented in `verifyRealToken`.
 
-### Dev-only seed route
+### Dev-only seed/clear routes
 
-`POST /dev/seed` (not under `/v1`, not part of the contract) wipes and reseeds the database. It self-guards on `DEV_AUTH === "true"` and 404s otherwise, so it can never accidentally serve outside local dev.
+`POST /dev/seed` and `POST /dev/clear` (not under `/v1`, not part of the contract) live in `src/routes/dev.ts`. Both self-guard on `DEV_AUTH === "true"` and 404 otherwise, so they can never accidentally serve outside local dev.
+
+- `/dev/seed` empties every table (row deletes, not `DROP TABLE` — schema stays intact) and reinserts fixture data.
+- `/dev/clear` runs the same row deletes but skips the reseed, leaving all tables empty. Handy when you want a clean slate without the fixture data coming back.
+
+Both share a `clearAllTables` helper that deletes in FK-safe order (`join_requests` → `runs` → `users`). Trigger either from a second terminal via the npm scripts above, or directly: `curl -X POST http://localhost:8787/dev/clear`.
 
 ## Deploying for real (needs a Cloudflare account)
 
@@ -54,7 +60,7 @@ Not done by this scaffold — see the repo root `CLAUDE.md` and the architecture
 - `src/lib/viewer.ts` — the viewer-scoped serialization layer: the 7-branch `ViewerAction` state machine, `exact_address`/`pending_requests` gating (as truly-absent keys, not nulls), server-computed `initials`, and hash-derived `cover_seed`/avatar color (no stored images, per contract §6).
 - `src/lib/loaders.ts` — shared DB loaders (run/user lookups, approved-count aggregation, draft/private visibility) reused across route files.
 - `src/lib/time.ts` — combines `date`+`time`+`timezone` into a `ZonedDateTimeString` with the *correct* UTC offset via `Intl.DateTimeFormat`, never a hardcoded offset.
-- `src/routes/*.ts` — one file per §1 resource group (`runs`, `requests`, `me`, `users`), plus `dev.ts` for the local-only seed route.
+- `src/routes/*.ts` — one file per §1 resource group (`runs`, `requests`, `me`, `users`), plus `dev.ts` for the local-only seed/clear routes.
 - `src/index.ts` — wires it all together: CORS, the auth-resolving middleware, `/v1` mounting, and a global error handler that maps `ApiError` (`src/lib/errors.ts`) to §4's exact response shape.
 
 ## Known open items (see `../API_CONTRACT.md` §7)

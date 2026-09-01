@@ -4,16 +4,11 @@
   "main": "src/index.ts",
   "compatibility_date": "2024-09-23",
   "compatibility_flags": ["nodejs_compat"],
-  // NOTE: database_id below is a placeholder. It's fine for fully local dev
-  // (`wrangler dev` / `d1 migrations apply --local` never call the Cloudflare
-  // API when running local-only). Before deploying for real, run
-  // `wrangler login` then `wrangler d1 create hoopin-db` and replace this
-  // id with the one it prints — see backend/README.md.
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "hoopin-db",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "f4f3f2b3-1885-465c-a450-51144ea2a301",
       "migrations_dir": "migrations"
     }
   ],

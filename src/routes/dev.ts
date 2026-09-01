@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { Env, AppVariables } from "../types";
-import { getDb } from "../db/client";
+import { getDb, type Db } from "../db/client";
 import { users, runs, joinRequests } from "../db/schema";
 import { buildSeedUsers, buildSeedRuns, buildSeedJoinRequests } from "../db/seedData";
 
@@ -13,13 +13,20 @@ import { buildSeedUsers, buildSeedRuns, buildSeedJoinRequests } from "../db/seed
  */
 export const devRoute = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
+// Row deletes (not DROP TABLE) — empties every table while leaving the
+// schema in place. Order respects FK dependencies: join_requests before
+// runs/users, runs before users.
+async function clearAllTables(db: Db) {
+  await db.delete(joinRequests);
+  await db.delete(runs);
+  await db.delete(users);
+}
+
 devRoute.post("/seed", async (c) => {
   if (c.env.DEV_AUTH !== "true") return c.notFound();
   const db = getDb(c.env);
 
-  await db.delete(joinRequests);
-  await db.delete(runs);
-  await db.delete(users);
+  await clearAllTables(db);
 
   // Inserted one row at a time (not a single batched multi-row INSERT) —
   // D1's per-statement bound-variable limit is easy to exceed once a table
@@ -29,4 +36,13 @@ devRoute.post("/seed", async (c) => {
   for (const row of buildSeedJoinRequests()) await db.insert(joinRequests).values(row);
 
   return c.json({ ok: true, seeded: true });
+});
+
+devRoute.post("/clear", async (c) => {
+  if (c.env.DEV_AUTH !== "true") return c.notFound();
+  const db = getDb(c.env);
+
+  await clearAllTables(db);
+
+  return c.json({ ok: true, cleared: true });
 });

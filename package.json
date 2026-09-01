@@ -11,6 +11,7 @@
     "db:migrate:local": "wrangler d1 migrations apply hoopin-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply hoopin-db --remote",
     "db:seed:local": "node scripts/seed-local.mjs",
+    "db:clear:local": "node scripts/clear-local.mjs",
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
