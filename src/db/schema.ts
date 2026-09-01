@@ -1,5 +1,4 @@
 import { sqliteTable, text, integer, index, uniqueIndex } from "drizzle-orm/sqlite-core";
-import { sql } from "drizzle-orm";
 
 /**
  * name/bio only — `initials` (API_CONTRACT.md §2 UserSummary) is
@@ -56,10 +55,16 @@ export const runs = sqliteTable(
 
 /**
  * An approved JoinRequest IS roster membership (API_CONTRACT.md §1/§6 — "no
- * separate Attendee resource"). At most one *active* (pending/approved) row
- * per (run_id, requester_id) — old withdrawn/declined rows must still be
- * allowed to coexist with a fresh request, which rules out a plain unique
- * index on (run_id, requester_id).
+ * separate Attendee resource"). At most one row EVER per (run_id,
+ * requester_id) — a viewer's relationship to a run is a single record, not
+ * an append-only event log. Re-requesting after a withdraw/decline reuses
+ * and resets the same row (routes/requests.ts's POST "/" does this as an
+ * UPSERT) rather than inserting a new one, so `id` is a stable identifier
+ * for "this requester's relationship to this run" for its whole lifetime,
+ * and old declined/withdrawn state is intentionally overwritten, not kept
+ * as history — see API_CONTRACT.md §2's note on this for the product
+ * reasoning (a "my requests" list should show one row per game, not one
+ * per attempt).
  */
 export const joinRequests = sqliteTable(
   "join_requests",
@@ -81,20 +86,15 @@ export const joinRequests = sqliteTable(
     runStatusIdx: index("requests_run_status_idx").on(table.runId, table.status),
     requesterIdx: index("requests_requester_idx").on(table.requesterId),
     /**
-     * The actual enforcement of "at most one active request per (run,
-     * requester)" — a partial unique index, so it only applies to
-     * pending/approved rows and leaves withdrawn/declined history alone.
-     * routes/requests.ts's POST "/" still does a SELECT-then-check first
-     * for a fast, friendly 409 in the common case, but that check-then-insert
-     * isn't atomic on its own — two truly concurrent requests (e.g. a
-     * double-click that fires before the UI's disabled state takes effect)
-     * can both pass the SELECT before either INSERT commits. This index is
-     * what actually closes that race: the second INSERT fails at the
-     * database level regardless of timing, and the route catches that
-     * failure and reports the same ALREADY_REQUESTED error.
+     * The actual enforcement of "one row ever per (run, requester)" — a
+     * full (non-partial) unique index, so routes/requests.ts's POST "/" can
+     * target it with `onConflictDoUpdate`. This is also what closes the
+     * race a double-click can otherwise cause: two truly concurrent
+     * requests both attempting to create/reactivate the same row resolve
+     * atomically at the database level regardless of timing (the SELECT
+     * pre-check in that route is only a fast/friendly pre-check, not the
+     * actual guarantee).
      */
-    oneActiveRequestPerViewerIdx: uniqueIndex("requests_one_active_per_viewer_idx")
-      .on(table.runId, table.requesterId)
-      .where(sql`${table.status} IN ('pending', 'approved')`),
+    oneRequestPerViewerIdx: uniqueIndex("requests_one_per_viewer_idx").on(table.runId, table.requesterId),
   }),
 );

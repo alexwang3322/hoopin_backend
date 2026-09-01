@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { and, desc, eq, inArray, lt, or } from "drizzle-orm";
+import { and, desc, eq, inArray, lt, or, sql } from "drizzle-orm";
 import type { Env, AppVariables } from "../types";
 import { getDb } from "../db/client";
 import { joinRequests, users } from "../db/schema";
@@ -39,18 +39,17 @@ requestsRoute.post("/", async (c) => {
   const parsed = createJoinRequestSchema.safeParse(json);
   if (!parsed.success) throw Errors.validation("Invalid request body.");
 
-  const [existingActive] = await db
+  const [existing] = await db
     .select()
     .from(joinRequests)
-    .where(
-      and(
-        eq(joinRequests.runId, run.id),
-        eq(joinRequests.requesterId, viewerId),
-        or(eq(joinRequests.status, "pending"), eq(joinRequests.status, "approved")),
-      ),
-    )
+    .where(and(eq(joinRequests.runId, run.id), eq(joinRequests.requesterId, viewerId)))
     .limit(1);
-  if (existingActive) throw Errors.alreadyRequested();
+  // Fast/friendly pre-check — an existing pending/approved row means
+  // there's nothing to (re)request. Not the actual guarantee: see the
+  // onConflictDoUpdate below, which is what makes this race-proof.
+  if (existing && (existing.status === "pending" || existing.status === "approved")) {
+    throw Errors.alreadyRequested();
+  }
 
   const going = (await approvedCounts(db, [run.id])).get(run.id) ?? 0;
   const willAutoApprove = run.autoApprove;
@@ -59,6 +58,12 @@ requestsRoute.post("/", async (c) => {
   }
 
   const now = new Date().toISOString();
+  // Only used if this is truly the first request ever for (run, viewer) —
+  // a reactivation (existing withdrawn/declined row) reuses that row's own
+  // id via onConflictDoUpdate instead, per db/schema.ts's "one row ever"
+  // design: a viewer's relationship to a run is a single record, not an
+  // append-only log, so re-requesting resets it in place rather than
+  // creating a second row for the same game.
   const row: JoinRequestRow = {
     id: `req_${crypto.randomUUID()}`,
     runId: run.id,
@@ -69,20 +74,35 @@ requestsRoute.post("/", async (c) => {
     createdAt: now,
     decidedAt: willAutoApprove ? now : null,
   };
-  try {
-    await db.insert(joinRequests).values(row);
-  } catch (err) {
-    // The partial unique index (db/schema.ts) is the actual race guard —
-    // the SELECT above is only a fast/friendly pre-check. A concurrent
-    // request that slipped past that check lands here instead.
-    if (err instanceof Error && /UNIQUE constraint failed/i.test(err.message)) {
-      throw Errors.alreadyRequested();
-    }
-    throw err;
-  }
 
+  const result = await db
+    .insert(joinRequests)
+    .values(row)
+    .onConflictDoUpdate({
+      target: [joinRequests.runId, joinRequests.requesterId],
+      set: {
+        message: row.message,
+        status: row.status,
+        declineReason: null,
+        createdAt: row.createdAt,
+        decidedAt: row.decidedAt,
+      },
+      // Only reactivate a *resolved* row. If the existing row is already
+      // pending/approved, this WHERE doesn't match, so SQLite performs
+      // neither the insert nor the update — 0 rows changed — which is
+      // exactly the ALREADY_REQUESTED case, now closed atomically even
+      // under true concurrency (the pre-check above can't be, on its own).
+      setWhere: sql`${joinRequests.status} IN ('withdrawn', 'declined')`,
+    });
+  if (result.meta.changes === 0) throw Errors.alreadyRequested();
+
+  const [finalRow] = await db
+    .select()
+    .from(joinRequests)
+    .where(and(eq(joinRequests.runId, run.id), eq(joinRequests.requesterId, viewerId)))
+    .limit(1);
   const requester = await loadUser(db, viewerId);
-  const body: JoinRequest = toJoinRequest(row, requester);
+  const body: JoinRequest = toJoinRequest(finalRow!, requester);
   return c.json(body, 201);
 });
 
