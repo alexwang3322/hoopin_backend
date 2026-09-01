@@ -1,0 +1,5 @@
+# Copy to .dev.vars for local dev (already gitignored).
+# Not read yet — placeholder for when Clerk (or another JWT issuer) is wired
+# in to replace src/lib/auth.ts's dev-bearer stub. See backend/README.md.
+CLERK_JWKS_URL=
+CLERK_ISSUER=
