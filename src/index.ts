@@ -8,6 +8,7 @@ import { requestsRoute } from "./routes/requests";
 import { meRoute } from "./routes/me";
 import { usersRoute } from "./routes/users";
 import { devRoute } from "./routes/dev";
+import { webhooksRoute } from "./routes/webhooks";
 
 const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -23,6 +24,7 @@ v1.route("/me", meRoute);
 v1.route("/users", usersRoute);
 app.route("/v1", v1);
 app.route("/dev", devRoute);
+app.route("/webhooks", webhooksRoute);
 
 app.notFound((c) => c.json({ error: { code: "NOT_FOUND", message: "No such route." } }, 404));
 

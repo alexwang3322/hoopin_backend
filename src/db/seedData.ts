@@ -29,6 +29,7 @@ export function buildSeedUsers(): UserRow[] {
   return raw.map(([id, name, bio]) => ({
     id,
     email: `${id}@dev.hoopin.local`,
+    phone: null,
     name,
     bio,
     createdAt: now,

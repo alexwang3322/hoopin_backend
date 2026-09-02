@@ -1,5 +1,11 @@
-# Copy to .dev.vars for local dev (already gitignored).
-# Not read yet — placeholder for when Clerk (or another JWT issuer) is wired
-# in to replace src/lib/auth.ts's dev-bearer stub. See backend/README.md.
-CLERK_JWKS_URL=
-CLERK_ISSUER=
+# Copy to .dev.vars for local dev (already gitignored). Read by
+# src/lib/auth.ts (session verification) and src/routes/webhooks.ts
+# (user.created/updated/deleted sync) once DEV_AUTH is false.
+#
+# CLERK_SECRET_KEY: Clerk Dashboard -> API Keys -> Secret key.
+# CLERK_WEBHOOK_SIGNING_SECRET: Clerk Dashboard -> Webhooks -> your endpoint
+#   -> Signing Secret (starts with "whsec_"). Only exists once you've
+#   created the endpoint, which needs a reachable URL (see cloudflared for
+#   local dev).
+CLERK_SECRET_KEY=
+CLERK_WEBHOOK_SIGNING_SECRET=

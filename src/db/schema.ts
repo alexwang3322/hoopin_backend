@@ -1,18 +1,33 @@
-import { sqliteTable, text, integer, index, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, index, uniqueIndex, check } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
 
 /**
- * name/bio only — `initials` (API_CONTRACT.md §2 UserSummary) is
+ * `id` is the Clerk user id (`sub` claim) — Clerk is the identity source of
+ * truth, rows are provisioned/kept in sync by routes/webhooks.ts's
+ * `user.created`/`user.updated` handler, never created by app code directly.
+ * email/phone are both nullable (Clerk sign-up can be email-first,
+ * phone-first, or either) but at least one must be present — enforced by
+ * the check constraint below rather than app code, matching this schema's
+ * existing preference for DB-level invariants (see join_requests' unique
+ * index note). `initials` (API_CONTRACT.md §2 UserSummary) is
  * server-computed from `name` at serialization time (see lib/viewer.ts's
  * `computeInitials`), never stored, per the contract's own note that this
  * is so the frontend doesn't reimplement the rule.
  */
-export const users = sqliteTable("users", {
-  id: text("id").primaryKey(),
-  email: text("email").notNull().unique(),
-  name: text("name").notNull(),
-  bio: text("bio"),
-  createdAt: text("created_at").notNull(),
-});
+export const users = sqliteTable(
+  "users",
+  {
+    id: text("id").primaryKey(),
+    email: text("email").unique(),
+    phone: text("phone").unique(),
+    name: text("name").notNull(),
+    bio: text("bio"),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => ({
+    hasIdentifierCheck: check("users_has_identifier_check", sql`${table.email} IS NOT NULL OR ${table.phone} IS NOT NULL`),
+  }),
+);
 
 /**
  * Mirrors API_CONTRACT.md §2's CreateRunRequest/RunDetail. `going_count` is

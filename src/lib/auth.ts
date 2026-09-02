@@ -1,4 +1,5 @@
 import type { Context, Next } from "hono";
+import { verifyToken } from "@clerk/backend";
 import { Errors } from "./errors";
 import type { Env, AppVariables } from "../types";
 
@@ -6,12 +7,16 @@ type Ctx = Context<{ Bindings: Env; Variables: AppVariables }>;
 
 /**
  * Auth issuance is explicitly out of scope in API_CONTRACT.md §5 — only the
- * transport (`Authorization: Bearer <token>`) is fixed. Until a real issuer
- * (Clerk, per backend/README.md) is wired in, DEV_AUTH=true accepts tokens
- * shaped `Bearer dev:<userId>` where <userId> is a real row in `users`, so
- * local development/testing can exercise every viewer-scoped rule without a
- * third-party account. DEV_AUTH must be off before this ever serves real
- * traffic — see the `verifyRealToken` stub below.
+ * transport (`Authorization: Bearer <token>`) is fixed. DEV_AUTH=true
+ * accepts tokens shaped `Bearer dev:<userId>` where <userId> is a real row
+ * in `users`, so local development/testing can exercise every
+ * viewer-scoped rule without a Clerk session. DEV_AUTH must be off before
+ * this ever serves real traffic — see `verifyRealToken` below, which
+ * verifies a real Clerk session JWT. The token's `sub` claim IS the
+ * `users.id` — rows are provisioned by routes/webhooks.ts, not here; a
+ * valid Clerk token for a user whose webhook hasn't landed yet (or who
+ * predates this being wired in) will 401 downstream via requireAuth's
+ * callers hitting a missing row, not here.
  */
 export async function resolveViewer(c: Ctx, next: Next) {
   const header = c.req.header("Authorization");
@@ -38,12 +43,13 @@ async function resolveDevToken(c: Ctx, token: string): Promise<string | null> {
   return userId;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function verifyRealToken(c: Ctx, token: string): Promise<string | null> {
-  throw new Error(
-    "DEV_AUTH is off but no real token verification is implemented yet. " +
-      "Wire Clerk JWT verification here (CLERK_JWKS_URL/.dev.vars) before disabling DEV_AUTH.",
-  );
+  try {
+    const payload = await verifyToken(token, { secretKey: c.env.CLERK_SECRET_KEY });
+    return payload.sub;
+  } catch {
+    throw Errors.unauthenticated();
+  }
 }
 
 /** Route guard for endpoints where §3 marks Auth as "Required". */

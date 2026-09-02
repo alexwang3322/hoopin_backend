@@ -15,8 +15,10 @@
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
+    "@clerk/backend": "^3.17.0",
     "drizzle-orm": "^0.36.4",
     "hono": "^4.6.13",
+    "svix": "^2.2.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
