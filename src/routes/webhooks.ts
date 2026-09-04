@@ -60,7 +60,7 @@ webhooksRoute.post("/clerk", async (c) => {
     const d = event.data;
     const email = d.email_addresses?.find((e) => e.id === d.primary_email_address_id)?.email_address ?? null;
     const phone = d.phone_numbers?.find((p) => p.id === d.primary_phone_number_id)?.phone_number ?? null;
-    const name = [d.first_name, d.last_name].filter(Boolean).join(" ") || d.username || "Player";
+    const name = [d.first_name, d.last_name].filter(Boolean).join(" ") || d.username || "Hooper";
 
     // email/phone/name are identity fields Clerk owns, so they stay synced
     // on every event. bio has no Clerk equivalent — set once at creation
