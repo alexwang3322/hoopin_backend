@@ -12,6 +12,24 @@ import { webhooksRoute } from "./routes/webhooks";
 
 const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
+// Registered first so it wraps the whole pipeline, including auth failures
+// thrown by resolveViewer below — those resolve via app.onError rather than
+// rejecting, so this still runs and sees the final status.
+app.use("*", async (c, next) => {
+  const start = Date.now();
+  await next();
+  console.log(
+    JSON.stringify({
+      event: "request",
+      method: c.req.method,
+      path: c.req.path,
+      status: c.res.status,
+      viewerId: c.get("viewerId") ?? null,
+      ms: Date.now() - start,
+    }),
+  );
+});
+
 app.use("*", cors({ origin: "*", allowHeaders: ["Authorization", "Content-Type"] }));
 app.use("*", resolveViewer);
 

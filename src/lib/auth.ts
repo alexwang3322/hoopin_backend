@@ -36,10 +36,16 @@ export async function resolveViewer(c: Ctx, next: Next) {
 }
 
 async function resolveDevToken(c: Ctx, token: string): Promise<string | null> {
-  if (!token.startsWith("dev:")) throw Errors.unauthenticated();
+  if (!token.startsWith("dev:")) {
+    console.warn(JSON.stringify({ event: "auth.dev_token_malformed" }));
+    throw Errors.unauthenticated();
+  }
   const userId = token.slice("dev:".length);
   const row = await c.env.DB.prepare("SELECT id FROM users WHERE id = ?").bind(userId).first();
-  if (!row) throw Errors.unauthenticated();
+  if (!row) {
+    console.warn(JSON.stringify({ event: "auth.dev_token_unknown_user", userId }));
+    throw Errors.unauthenticated();
+  }
   return userId;
 }
 
@@ -47,7 +53,10 @@ async function verifyRealToken(c: Ctx, token: string): Promise<string | null> {
   try {
     const payload = await verifyToken(token, { secretKey: c.env.CLERK_SECRET_KEY });
     return payload.sub;
-  } catch {
+  } catch (err) {
+    console.warn(
+      JSON.stringify({ event: "auth.clerk_verify_failed", reason: err instanceof Error ? err.message : String(err) }),
+    );
     throw Errors.unauthenticated();
   }
 }
@@ -55,6 +64,7 @@ async function verifyRealToken(c: Ctx, token: string): Promise<string | null> {
 /** Route guard for endpoints where §3 marks Auth as "Required". */
 export function requireAuth(c: Ctx): string {
   const viewerId = c.get("viewerId");
+  console.log(JSON.stringify({ event: "viewerId", viewerId }));
   if (!viewerId) throw Errors.unauthenticated();
   return viewerId;
 }
