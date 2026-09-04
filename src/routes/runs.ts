@@ -6,7 +6,7 @@ import { runs, users, joinRequests } from "../db/schema";
 import { Errors } from "../lib/errors";
 import { requireAuth } from "../lib/auth";
 import { decodeCursor, encodeCursor, parseLimit } from "../lib/pagination";
-import { createRunSchema, updateRunSchema } from "../lib/validation";
+import { createRunSchema, updateRunSchema, city as cityEnum } from "../lib/validation";
 import { zonedDateTimeString, assertValidTimeZone } from "../lib/time";
 import { loadRun, loadUser, approvedCounts, latestViewerRequests, assertRunVisible } from "../lib/loaders";
 import {
@@ -34,7 +34,8 @@ runsRoute.get("/", async (c) => {
   const cursorParam = c.req.query("cursor");
 
   const conditions = [eq(runs.isDraft, false), eq(runs.visibility, "public")];
-  if (cityFilter === "SF" || cityFilter === "OAK") conditions.push(eq(runs.city, cityFilter));
+  const cityParse = cityEnum.safeParse(cityFilter);
+  if (cityParse.success) conditions.push(eq(runs.city, cityParse.data));
   if (formatFilter === "5v5_full_court" || formatFilter === "3v3_half_court") conditions.push(eq(runs.format, formatFilter));
 
   if (cursorParam) {

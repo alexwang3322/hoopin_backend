@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const runFormat = z.enum(["5v5_full_court", "3v3_half_court"]);
-const city = z.enum(["SF", "OAK"]);
+export const city = z.enum(["SF", "OAK", "SJ", "SD", "NYC"]);
 const visibility = z.enum(["public", "private"]);
 
 export const createRunSchema = z.object({

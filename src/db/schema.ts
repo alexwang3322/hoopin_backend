@@ -47,7 +47,7 @@ export const runs = sqliteTable(
     format: text("format", { enum: ["5v5_full_court", "3v3_half_court"] }).notNull(),
     venueName: text("venue_name").notNull(),
     exactAddress: text("exact_address").notNull(),
-    city: text("city", { enum: ["SF", "OAK"] }).notNull(),
+    city: text("city", { enum: ["SF", "OAK", "SJ", "SD", "NYC"] }).notNull(),
     hostId: text("host_id")
       .notNull()
       .references(() => users.id),

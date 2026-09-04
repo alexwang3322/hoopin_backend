@@ -9,7 +9,7 @@ export type ZonedDateTimeString = string;
 export type IanaTimezone = string;
 export type RunFormat = "5v5_full_court" | "3v3_half_court";
 export type RunVisibility = "public" | "private";
-export type City = "SF" | "OAK";
+export type City = "SF" | "OAK" | "SJ" | "SD" | "NYC";
 
 export type ViewerRunStatus = "host" | "pending" | "approved" | "declined" | "withdrawn" | null;
 

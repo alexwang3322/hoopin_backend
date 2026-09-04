@@ -154,6 +154,63 @@ export function buildSeedRuns(): RunRow[] {
       createdAt: ago(3 * DAY),
     },
     {
+      id: "ev_sj_backyard",
+      title: "San Jose Backyard Run",
+      description: "Full-court run at a resurfaced park court. Small, friendly group — good for a first visit.",
+      startsAt: "2026-09-12T17:30:00-07:00",
+      endsAt: "2026-09-12T19:30:00-07:00",
+      timezone: "America/Los_Angeles",
+      format: "5v5_full_court",
+      venueName: "Backesto Park Courts",
+      exactAddress: "1595 Jackson Ave, San Jose, CA 95126",
+      city: "SJ",
+      hostId: "u_tyler",
+      capacity: 10,
+      visibility: "public",
+      autoApprove: false,
+      isDraft: false,
+      cancelledAt: null,
+      createdAt: ago(8 * DAY),
+    },
+    {
+      id: "ev_sd_sunset",
+      title: "San Diego Sunset Run",
+      description: "Half-court run right as the sun goes down. Casual pace, ocean breeze included.",
+      startsAt: "2026-09-13T18:30:00-07:00",
+      endsAt: "2026-09-13T20:00:00-07:00",
+      timezone: "America/Los_Angeles",
+      format: "3v3_half_court",
+      venueName: "Mission Bay Courts",
+      exactAddress: "2115 Fiesta Island Rd, San Diego, CA 92109",
+      city: "SD",
+      hostId: "u_sam",
+      capacity: 6,
+      visibility: "public",
+      autoApprove: false,
+      isDraft: false,
+      cancelledAt: null,
+      createdAt: ago(6 * DAY),
+    },
+    {
+      id: "ev_nyc_westside",
+      title: "West Side Run",
+      description: "Full-court weeknight run, next-basket-wins. Show up early — this one gets crowded.",
+      startsAt: "2026-09-11T19:00:00-04:00",
+      endsAt: "2026-09-11T21:00:00-04:00",
+      timezone: "America/New_York",
+      format: "5v5_full_court",
+      venueName: "West 4th Street Courts",
+      exactAddress: "48 W 4th St, New York, NY 10012",
+      city: "NYC",
+      hostId: "u_marcus",
+      capacity: 10,
+      visibility: "public",
+      autoApprove: false,
+      isDraft: false,
+      cancelledAt: null,
+      createdAt: ago(9 * DAY),
+    },
+    {
       id: "ev_downtown_scrimmage",
       title: "Downtown Oakland Scrimmage",
       description: "Invite-only weeknight run — link only, not listed in Discover.",
@@ -256,6 +313,14 @@ export function buildSeedJoinRequests(): JoinRequestRow[] {
     req("ev_presidio", "u_kai", "approved", 8 * DAY),
 
     // ev_bernal — none yet (host: u_noah, auto_approve: true)
+
+    // ev_sj_backyard — 1 approved (host: u_tyler)
+    req("ev_sj_backyard", "u_sam", "approved", 5 * DAY),
+
+    // ev_sd_sunset — none yet (host: u_sam)
+
+    // ev_nyc_westside — 1 approved (host: u_marcus)
+    req("ev_nyc_westside", "u_kai", "approved", 7 * DAY),
 
     // ev_downtown_scrimmage — u_jamie declined, with a reason (host: u_kai, private)
     req("ev_downtown_scrimmage", "u_jamie", "declined", 14 * DAY, {
