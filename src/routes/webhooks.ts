@@ -22,11 +22,14 @@ interface ClerkUserEvent {
     primary_email_address_id?: string | null;
     phone_numbers?: { id: string; phone_number: string }[];
     primary_phone_number_id?: string | null;
-    first_name?: string | null;
-    last_name?: string | null;
-    username?: string | null;
   };
 }
+
+// Every new sign-up starts as this generic persona rather than pulling
+// Clerk's real name into the app — name/bio are app-owned profile fields
+// the user edits in-app, not synced from Clerk's identity data.
+const DEFAULT_NAME = "Hooper";
+const DEFAULT_BIO = "I am the captain of my soul, I am the master of my fate.";
 
 webhooksRoute.post("/clerk", async (c) => {
   // svix verifies against the raw body bytes — must read as text, not json,
@@ -38,10 +41,14 @@ webhooksRoute.post("/clerk", async (c) => {
     "svix-signature": c.req.header("svix-signature") ?? "",
   };
 
+  // This version of the `svix` package's Webhook.verify() only checks the
+  // signature (throwing on failure) — it does NOT return the parsed
+  // payload, unlike some other svix SDKs/versions. Parse it ourselves.
   let event: ClerkUserEvent;
   try {
     const wh = new Webhook(c.env.CLERK_WEBHOOK_SIGNING_SECRET);
-    event = wh.verify(payload, svixHeaders) as unknown as ClerkUserEvent;
+    wh.verify(payload, svixHeaders);
+    event = JSON.parse(payload) as ClerkUserEvent;
   } catch {
     return c.json({ error: "Invalid webhook signature." }, 400);
   }
@@ -52,12 +59,15 @@ webhooksRoute.post("/clerk", async (c) => {
     const d = event.data;
     const email = d.email_addresses?.find((e) => e.id === d.primary_email_address_id)?.email_address ?? null;
     const phone = d.phone_numbers?.find((p) => p.id === d.primary_phone_number_id)?.phone_number ?? null;
-    const name = [d.first_name, d.last_name].filter(Boolean).join(" ") || d.username || "Player";
 
+    // email/phone are identity fields Clerk owns, so they stay synced on
+    // every event. name/bio are only set on first creation (the generic
+    // default above) and never touched again here — once account editing
+    // is wired up, a user's own edits must survive a later Clerk sync.
     await db
       .insert(users)
-      .values({ id: d.id, email, phone, name, bio: null, createdAt: new Date().toISOString() })
-      .onConflictDoUpdate({ target: users.id, set: { email, phone, name } });
+      .values({ id: d.id, email, phone, name: DEFAULT_NAME, bio: DEFAULT_BIO, createdAt: new Date().toISOString() })
+      .onConflictDoUpdate({ target: users.id, set: { email, phone } });
   }
 
   if (event.type === "user.deleted") {
