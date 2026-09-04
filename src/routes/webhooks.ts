@@ -22,13 +22,14 @@ interface ClerkUserEvent {
     primary_email_address_id?: string | null;
     phone_numbers?: { id: string; phone_number: string }[];
     primary_phone_number_id?: string | null;
+    first_name?: string | null;
+    last_name?: string | null;
+    username?: string | null;
   };
 }
 
-// Every new sign-up starts as this generic persona rather than pulling
-// Clerk's real name into the app — name/bio are app-owned profile fields
-// the user edits in-app, not synced from Clerk's identity data.
-const DEFAULT_NAME = "Hooper";
+// bio has no Clerk equivalent, so every new sign-up starts with this fixed
+// default — app-owned, only set on first creation, never resynced.
 const DEFAULT_BIO = "I am the captain of my soul, I am the master of my fate.";
 
 webhooksRoute.post("/clerk", async (c) => {
@@ -59,15 +60,15 @@ webhooksRoute.post("/clerk", async (c) => {
     const d = event.data;
     const email = d.email_addresses?.find((e) => e.id === d.primary_email_address_id)?.email_address ?? null;
     const phone = d.phone_numbers?.find((p) => p.id === d.primary_phone_number_id)?.phone_number ?? null;
+    const name = [d.first_name, d.last_name].filter(Boolean).join(" ") || d.username || "Player";
 
-    // email/phone are identity fields Clerk owns, so they stay synced on
-    // every event. name/bio are only set on first creation (the generic
-    // default above) and never touched again here — once account editing
-    // is wired up, a user's own edits must survive a later Clerk sync.
+    // email/phone/name are identity fields Clerk owns, so they stay synced
+    // on every event. bio has no Clerk equivalent — set once at creation
+    // to the fixed default, never touched again here.
     await db
       .insert(users)
-      .values({ id: d.id, email, phone, name: DEFAULT_NAME, bio: DEFAULT_BIO, createdAt: new Date().toISOString() })
-      .onConflictDoUpdate({ target: users.id, set: { email, phone } });
+      .values({ id: d.id, email, phone, name, bio: DEFAULT_BIO, createdAt: new Date().toISOString() })
+      .onConflictDoUpdate({ target: users.id, set: { email, phone, name } });
   }
 
   if (event.type === "user.deleted") {
