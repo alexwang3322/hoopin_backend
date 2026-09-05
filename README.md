@@ -4,7 +4,7 @@ Implements `../API_CONTRACT.md` on Cloudflare Workers ("Plan A" from the archite
 
 ## Status
 
-All of §3's endpoints are implemented and enforce §6's business rules server-side (capacity checks on both `approve` and the auto-approve create path, `exact_address`/`pending_requests` viewer-gating, draft-hiding, cursor pagination). **Auth is a local-dev stub** (see below) — not wired to a real issuer yet.
+All of §3's endpoints are implemented and enforce §6's business rules server-side (capacity checks on both `approve` and the auto-approve create path, `exact_address`/`pending_requests` viewer-gating, draft-hiding, cursor pagination). **Auth is real** — Clerk-issued session JWTs, verified server-side and deployed to production (`src/lib/auth.ts`) — with a `DEV_AUTH` toggle down to a local-only bearer-token stub for offline testing (see below).
 
 ## Running locally — no Cloudflare account needed
 
@@ -50,8 +50,8 @@ Not done by this scaffold — see the repo root `CLAUDE.md` and the architecture
 1. `wrangler login` (or reuse the `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` already used by `frontend/`'s deploy).
 2. `wrangler d1 create hoopin-db` — replace the placeholder `database_id` in `wrangler.jsonc` with the real one it prints.
 3. `npm run db:migrate:remote`.
-4. Wire a real auth issuer (Clerk recommended — see `.dev.vars.example`) and flip `DEV_AUTH` to `false` in `wrangler.jsonc`.
-5. `npm run deploy`.
+4. Create a Clerk app (or reuse the existing one — see `frontend/ClerkPrompt.md`) and set its secret key and a webhook signing secret as Worker secrets: `wrangler secret put CLERK_SECRET_KEY` / `wrangler secret put CLERK_WEBHOOK_SIGNING_SECRET` (never in `wrangler.jsonc`). `DEV_AUTH` is already `"false"` there, committed.
+5. `npm run deploy`, then register `<deployed-url>/webhooks/clerk` as a webhook endpoint in the Clerk Dashboard, subscribed to `user.created`/`user.updated`/`user.deleted`.
 
 ## Architecture
 
