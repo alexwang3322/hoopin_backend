@@ -72,7 +72,7 @@ export function buildSeedRuns(): RunRow[] {
       hostId: "u_marcus",
       capacity: 10,
       visibility: "public",
-      autoApprove: false,
+      autoApprove: true,
       isDraft: false,
       cancelledAt: null,
       createdAt: ago(20 * DAY),
@@ -110,7 +110,7 @@ export function buildSeedRuns(): RunRow[] {
       hostId: "u_deshawn",
       capacity: 7,
       visibility: "public",
-      autoApprove: false,
+      autoApprove: true,
       isDraft: false,
       cancelledAt: null,
       createdAt: ago(30 * DAY),
@@ -190,6 +190,25 @@ export function buildSeedRuns(): RunRow[] {
       isDraft: false,
       cancelledAt: null,
       createdAt: ago(6 * DAY),
+    },
+    {
+      id: "ev_doyle_outdoor",
+      title: "Doyle Rec Center Outdoor Run",
+      description: "Full-court run on Doyle's outdoor court. First-come, next-basket-wins, bring water — no shade on this one.",
+      startsAt: "2026-09-14T09:00:00-07:00",
+      endsAt: "2026-09-14T11:00:00-07:00",
+      timezone: "America/Los_Angeles",
+      format: "5v5_full_court",
+      venueName: "Doyle Recreation Center (Outdoor)",
+      exactAddress: "8175 Regents Rd, San Diego, CA 92122",
+      city: "SD",
+      hostId: "u_kai",
+      capacity: 10,
+      visibility: "public",
+      autoApprove: false,
+      isDraft: false,
+      cancelledAt: null,
+      createdAt: ago(4 * DAY),
     },
     {
       id: "ev_nyc_westside",
@@ -318,6 +337,9 @@ export function buildSeedJoinRequests(): JoinRequestRow[] {
     req("ev_sj_backyard", "u_sam", "approved", 5 * DAY),
 
     // ev_sd_sunset — none yet (host: u_sam)
+
+    // ev_doyle_outdoor — 1 pending (host: u_kai)
+    req("ev_doyle_outdoor", "u_deshawn", "pending", 8 * HOUR),
 
     // ev_nyc_westside — 1 approved (host: u_marcus)
     req("ev_nyc_westside", "u_kai", "approved", 7 * DAY),
