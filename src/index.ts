@@ -9,6 +9,8 @@ import { meRoute } from "./routes/me";
 import { usersRoute } from "./routes/users";
 import { devRoute } from "./routes/dev";
 import { webhooksRoute } from "./routes/webhooks";
+import { getDb } from "./db/client";
+import { refreshOutdatedRunDates } from "./lib/refreshDates";
 
 const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -52,4 +54,18 @@ app.onError((err, c) => {
   return c.json({ error: { code: "INTERNAL_ERROR", message: "Something went wrong." } }, 500);
 });
 
-export default app;
+export default {
+  fetch: app.fetch,
+  // Cloudflare Cron Trigger (wrangler.jsonc's `triggers.crons`) — runs
+  // automatically in the background on Cloudflare's infrastructure, no
+  // client request involved. Keeps seed/demo run dates from aging into the
+  // past; see lib/refreshDates.ts.
+  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
+    const db = getDb(env);
+    ctx.waitUntil(
+      refreshOutdatedRunDates(db).then((updated) => {
+        console.log(JSON.stringify({ event: "scheduled_refresh_dates", updated }));
+      }),
+    );
+  },
+};

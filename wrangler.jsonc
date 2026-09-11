@@ -17,6 +17,14 @@
     // unset) once Clerk (or another real issuer) is wired in.
     "DEV_AUTH": "false"
   },
+  "triggers": {
+    // Weekly, Monday 00:00 UTC — fires src/index.ts's `scheduled` handler,
+    // which shifts any past-due runs.startsAt/endsAt forward by whole
+    // weeks (src/lib/refreshDates.ts). Not exercised by `wrangler dev`;
+    // trigger it locally with `wrangler dev --test-scheduled` and a
+    // `curl "http://localhost:8787/__scheduled"` request, or after deploy.
+    "crons": ["0 0 * * 1"]
+  },
   "observability": {
     "logs": {
       "enabled": true,
