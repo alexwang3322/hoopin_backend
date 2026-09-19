@@ -43,6 +43,10 @@ This is a **local-dev-only stub** (`src/lib/auth.ts`) — it must never run with
 
 Both share a `clearAllTables` helper that deletes in FK-safe order (`join_requests` → `runs` → `users`). Trigger either from a second terminal via the npm scripts above, or directly: `curl -X POST http://localhost:8787/dev/clear`.
 
+### Weekly seed-date refresh (Cron Trigger)
+
+`wrangler.jsonc`'s `triggers.crons` (`0 0 * * 1`, Mondays 00:00 UTC) fires `src/index.ts`'s `scheduled` handler, which calls `refreshOutdatedRunDates` (`src/lib/refreshDates.ts`): any past-due run whose id starts with `ev_` (seed/demo runs only — real users' runs are never touched) has `startsAt`/`endsAt` shifted forward by whole weeks. Test locally with `wrangler dev --test-scheduled`, then `curl "http://localhost:8787/__scheduled"`. `/dev/seed` can't be used against production (404s, and would wipe real data); to hand-adjust production dates use `wrangler d1 execute hoopin-db --remote`.
+
 ## Deploying for real (needs a Cloudflare account)
 
 Not done by this scaffold — see the repo root `CLAUDE.md` and the architecture discussion for the full picture. Short version:

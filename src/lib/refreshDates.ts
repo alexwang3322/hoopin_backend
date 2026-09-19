@@ -2,13 +2,14 @@ import { eq } from "drizzle-orm";
 import { runs } from "../db/schema";
 import type { Db } from "../db/client";
 
+const SEED_RUN_ID_PREFIX = "ev_";
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const ZONED_DATETIME_PATTERN = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2})([+-]\d{2}:\d{2}|Z)$/;
 
 /**
- * Weekly upkeep for seed/demo data: `runs.startsAt`/`endsAt` are fixed
- * ZonedDateTimeStrings (lib/time.ts) that otherwise age into the past and
- * make the app look dead. Any run whose `startsAt` has already passed gets
+ * Weekly upkeep for seed/demo data (only runs whose id starts with `ev_`):
+ * `runs.startsAt`/`endsAt` are fixed ZonedDateTimeStrings (lib/time.ts) that
+ * otherwise age into the past and make the app look dead. Any such run whose `startsAt` has already passed gets
  * both timestamps shifted forward by whole weeks — one 7-day shift at a
  * time, repeated as many times as needed — until `startsAt` is current
  * again, so a run stays correct even if a scheduled run is missed for a
@@ -25,6 +26,9 @@ export async function refreshOutdatedRunDates(db: Db, now: Date = new Date()): P
 
   let updated = 0;
   for (const run of all) {
+    // Seed/demo runs only — real users' runs keep their real dates.
+    if (!run.id.startsWith(SEED_RUN_ID_PREFIX)) continue;
+
     const startsAt = new Date(run.startsAt);
     if (startsAt >= now) continue;
 
