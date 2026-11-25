@@ -11,6 +11,7 @@ import { devRoute } from "./routes/dev";
 import { webhooksRoute } from "./routes/webhooks";
 import { getDb } from "./db/client";
 import { refreshOutdatedRunDates } from "./lib/refreshDates";
+import { adminRoute } from "./routes/admin";
 
 const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -44,6 +45,7 @@ v1.route("/me", meRoute);
 v1.route("/users", usersRoute);
 app.route("/v1", v1);
 app.route("/dev", devRoute);
+app.route("/admin", adminRoute);
 app.route("/webhooks", webhooksRoute);
 
 app.notFound((c) => c.json({ error: { code: "NOT_FOUND", message: "No such route." } }, 404));
