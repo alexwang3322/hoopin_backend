@@ -1,13 +1,15 @@
 import { Hono } from "hono";
+import { createClerkClient } from "@clerk/backend";
 import { and, asc, desc, eq, gt, inArray, lt, or } from "drizzle-orm";
 import type { Env, AppVariables } from "../types";
 import { getDb } from "../db/client";
 import { runs, users, joinRequests } from "../db/schema";
 import { requireAuth } from "../lib/auth";
-import { Errors } from "../lib/errors";
+import { ApiError, Errors } from "../lib/errors";
 import { decodeCursor, encodeCursor, parseLimit } from "../lib/pagination";
 import { loadUser, approvedCounts } from "../lib/loaders";
-import { toUserSummary, toRunSummary, toJoinRequest } from "../lib/viewer";
+import { toAccountProfile, toRunSummary, toJoinRequest } from "../lib/viewer";
+import { updateAccountSchema } from "../lib/validation";
 import type { CursorPage, JoinRequestWithRun, RunSummary, HeaderCounts } from "../contract-types";
 
 export const meRoute = new Hono<{ Bindings: Env; Variables: AppVariables }>();
@@ -17,7 +19,43 @@ meRoute.get("/", async (c) => {
   const viewerId = requireAuth(c);
   const db = getDb(c.env);
   const me = await loadUser(db, viewerId);
-  return c.json(toUserSummary(me));
+  return c.json(toAccountProfile(me));
+});
+
+// PATCH /me — update the signed-in viewer's account. Clerk remains the source of truth for name;
+// app-owned bio/preferences are stored in D1. The webhook's later name sync is idempotent.
+meRoute.patch("/", async (c) => {
+  const viewerId = requireAuth(c);
+  const db = getDb(c.env);
+  const json = await c.req.json().catch(() => null);
+  const parsed = updateAccountSchema.safeParse(json);
+  if (!parsed.success) {
+    const first = parsed.error.issues[0];
+    throw Errors.validation(first?.message ?? "Invalid profile.", first?.path.join(".") || undefined);
+  }
+
+  const existing = await loadUser(db, viewerId);
+  const body = parsed.data;
+  const name = body.name.replace(/\s+/g, " ").trim();
+  if (name !== existing.name && c.env.DEV_AUTH !== "true") {
+    const [firstName, ...lastNameParts] = name.split(" ");
+    try {
+      const clerk = createClerkClient({ secretKey: c.env.CLERK_SECRET_KEY });
+      await clerk.users.updateUser(viewerId, { firstName, lastName: lastNameParts.join(" ") });
+    } catch (error) {
+      console.error("profile name update failed", error);
+      throw new ApiError(409, "NAME_UPDATE_FAILED", "Couldn't update your name. Please try again.", "name");
+    }
+  }
+
+  await db.update(users).set({
+    name,
+    bio: body.bio,
+    location: body.location,
+    gender: body.gender,
+    position: body.position,
+  }).where(eq(users.id, viewerId));
+  return c.json(toAccountProfile(await loadUser(db, viewerId)));
 });
 
 // GET /me/requests — "My Runs", sorted created_at desc

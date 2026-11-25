@@ -27,6 +27,14 @@ export const createJoinRequestSchema = z.object({
   message: z.string().optional(),
 });
 
+export const updateAccountSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  bio: z.string().trim().max(500).nullable(),
+  location: city,
+  gender: z.enum(["Prefer not to say", "Woman", "Man", "Non-binary"]),
+  position: z.enum(["Flexible", "Point guard", "Shooting guard", "Forward", "Center"]),
+});
+
 export const declineJoinRequestSchema = z.object({
   decline_reason: z.string().optional(),
 });

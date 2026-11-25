@@ -2,6 +2,7 @@ import type { InferSelectModel } from "drizzle-orm";
 import type { users, runs, joinRequests } from "../db/schema";
 import type {
   UserSummary,
+  AccountProfile,
   RunSummary,
   RunDetail,
   JoinRequest,
@@ -65,6 +66,15 @@ export function avatarColorFor(seed: string): string {
 
 export function toUserSummary(row: UserRow): UserSummary {
   return { id: row.id, name: row.name, initials: computeInitials(row.name), bio: row.bio ?? null };
+}
+
+export function toAccountProfile(row: UserRow): AccountProfile {
+  return {
+    ...toUserSummary(row),
+    location: row.location,
+    gender: row.gender,
+    position: row.position,
+  };
 }
 
 export function toJoinRequest(row: JoinRequestRow, requester: UserRow): JoinRequest {

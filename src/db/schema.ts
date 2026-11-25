@@ -22,6 +22,9 @@ export const users = sqliteTable(
     phone: text("phone").unique(),
     name: text("name").notNull(),
     bio: text("bio"),
+    location: text("location", { enum: ["SF", "OAK", "SJ", "SD", "NYC"] }).notNull().default("SD"),
+    gender: text("gender", { enum: ["Prefer not to say", "Woman", "Man", "Non-binary"] }).notNull().default("Prefer not to say"),
+    position: text("position", { enum: ["Flexible", "Point guard", "Shooting guard", "Forward", "Center"] }).notNull().default("Flexible"),
     createdAt: text("created_at").notNull(),
   },
   (table) => ({

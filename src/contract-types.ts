@@ -31,6 +31,23 @@ export interface UserSummary {
   bio: string | null;
 }
 
+export type Gender = "Prefer not to say" | "Woman" | "Man" | "Non-binary";
+export type PlayerPosition = "Flexible" | "Point guard" | "Shooting guard" | "Forward" | "Center";
+
+export interface AccountProfile extends UserSummary {
+  location: City;
+  gender: Gender;
+  position: PlayerPosition;
+}
+
+export interface UpdateAccountRequest {
+  name: string;
+  bio: string | null;
+  location: City;
+  gender: Gender;
+  position: PlayerPosition;
+}
+
 export interface RunSummary {
   id: string;
   title: string;

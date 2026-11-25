@@ -32,6 +32,9 @@ export function buildSeedUsers(): UserRow[] {
     phone: null,
     name,
     bio,
+    location: "SD",
+    gender: "Prefer not to say",
+    position: "Flexible",
     createdAt: now,
   }));
 }
