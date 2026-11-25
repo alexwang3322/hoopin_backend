@@ -47,6 +47,12 @@ Both share a `clearAllTables` helper that deletes in FK-safe order (`join_reques
 
 `wrangler.jsonc`'s `triggers.crons` (`0 0 * * 1`, Mondays 00:00 UTC) fires `src/index.ts`'s `scheduled` handler, which calls `refreshOutdatedRunDates` (`src/lib/refreshDates.ts`): any past-due run whose id starts with `ev_` (seed/demo runs only — real users' runs are never touched) has `startsAt`/`endsAt` shifted forward by whole weeks. Test locally with `wrangler dev --test-scheduled`, then `curl "http://localhost:8787/__scheduled"`. `/dev/seed` can't be used against production (404s, and would wipe real data); to hand-adjust production dates use `wrangler d1 execute hoopin-db --remote`.
 
+### Manual date refresh
+
+`GET /admin/refresh-seed-dates` opens the browser page at `https://hoopin.org/admin/refresh-seed-dates`; opening it does not change data. Its **Refresh now** button sends a Clerk-authenticated `POST /admin/refresh-seed-dates`, which calls the same function as the weekly schedule and returns `{ ok, updated }`.
+
+Set `SEED_REFRESH_ADMIN_USER_ID` to the exact Clerk user ID of the administrator as a Worker secret (`wrangler secret put SEED_REFRESH_ADMIN_USER_ID`). If it is unset, the POST route returns 404; any other signed-in user receives 403. The Clerk token is verified by the normal auth middleware. Do not put an admin credential in the URL.
+
 ## Deploying for real (needs a Cloudflare account)
 
 Not done by this scaffold — see the repo root `CLAUDE.md` and the architecture discussion for the full picture. Short version:
